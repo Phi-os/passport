@@ -51,7 +51,7 @@ class PassportServiceProvider extends ServiceProvider
                 Console\KeysCommand::class,
             ];
 
-            if (Passport::$useClientUUIDs) {
+            if (Passport::$useClientUUIds) {
                 array_push($commands, Console\UUIDCommand::class);
             }
 
