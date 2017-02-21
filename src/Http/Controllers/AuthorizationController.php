@@ -63,10 +63,17 @@ class AuthorizationController
 
             $scopes = $this->parseScopes($authRequest);
 
-            $token = $tokens->findValidToken(
-                $user = $request->user(),
-                $client = $clients->find($authRequest->getClient()->getIdentifier())
-            );
+            $identifier = $authRequest->getClient()->getIdentifier();
+
+            if (!Passport::$useClientUUIds) {
+                $client = $clients->find($identifier);
+            } else {
+                $client = $clients->findUUID($identifier);
+            }
+
+            $user = $request->user();
+
+            $token = $tokens->findValidToken($user, $client);
 
             if ($token && $token->scopes === collect($scopes)->pluck('id')->all()) {
                 return $this->approveRequest($authRequest, $user);
@@ -75,9 +82,9 @@ class AuthorizationController
             $request->session()->put('authRequest', $authRequest);
 
             return $this->response->view('passport::authorize', [
-                'client' => $client,
-                'user' => $user,
-                'scopes' => $scopes,
+                'client'  => $client,
+                'user'    => $user,
+                'scopes'  => $scopes,
                 'request' => $request,
             ]);
         });

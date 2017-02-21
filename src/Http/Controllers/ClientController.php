@@ -8,6 +8,7 @@ use Laravel\Passport\Client;
 use Laravel\Passport\ClientRepository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use Laravel\Passport\Passport;
 
 class ClientController
 {
@@ -26,17 +27,27 @@ class ClientController
     protected $validation;
 
     /**
+     * @var string
+     */
+    protected $lookup = 'find';
+
+    /**
      * Create a client controller instance.
      *
      * @param  ClientRepository  $clients
      * @param  ValidationFactory  $validation
      * @return void
      */
-    public function __construct(ClientRepository $clients,
-                                ValidationFactory $validation)
-    {
+    public function __construct(
+        ClientRepository $clients,
+        ValidationFactory $validation
+    ) {
         $this->clients = $clients;
         $this->validation = $validation;
+
+        if (Passport::$useClientUUIds) {
+            $this->lookup = 'findUUID';
+        }
     }
 
     /**
@@ -89,7 +100,7 @@ class ClientController
         ])->validate();
 
         return $this->clients->update(
-            $request->user()->clients->find($clientId),
+            $request->user()->clients->{$this->lookup}($clientId),
             $request->name, $request->redirect
         );
     }
@@ -103,12 +114,12 @@ class ClientController
      */
     public function destroy(Request $request, $clientId)
     {
-        if (! $request->user()->clients->find($clientId)) {
+        if (! $request->user()->clients->{$this->lookup}($clientId)) {
             return new Response('', 404);
         }
 
         $this->clients->delete(
-            $request->user()->clients->find($clientId)
+            $request->user()->clients->{$this->lookup}($clientId)
         );
     }
 }

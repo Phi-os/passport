@@ -59,6 +59,19 @@ class AccessTokenController
      */
     public function issueToken(ServerRequestInterface $request)
     {
+        if (Passport::$useClientUUIds) {
+            $rq = request();
+
+            $client = Client::where('uuid', $rq->input('client_id'))->firstOrFail();
+
+            $formData = $request->getParsedBody();
+
+            array_set($formData, 'client_id', $client->id);
+
+            $request = $request->withParsedBody($formData);
+
+        }
+
         return $this->withErrorHandling(function () use ($request) {
             return $this->server->respondToAccessTokenRequest($request, new Psr7Response);
         });

@@ -2,6 +2,8 @@
 
 namespace Laravel\Passport;
 
+use Ramsey\Uuid\Uuid;
+
 class ClientRepository
 {
     /**
@@ -14,6 +16,17 @@ class ClientRepository
     {
         return Client::find($id);
     }
+
+    /**
+     * Get a client by the given UUID
+     *
+     * @param  string  $uuid
+     * @return Client|null
+     */
+    public function findUUID($uuid)
+     {
+         return Client::where('uuid', $uuid)->firstOrFail();
+     }
 
     /**
      * Get an active client by the given ID.
@@ -79,7 +92,8 @@ class ClientRepository
      */
     public function create($userId, $name, $redirect, $personalAccess = false, $password = false)
     {
-        $client = (new Client)->forceFill([
+        //$client = (new Client)->forceFill([
+        $data = [
             'user_id' => $userId,
             'name' => $name,
             'secret' => str_random(40),
@@ -87,9 +101,14 @@ class ClientRepository
             'personal_access_client' => $personalAccess,
             'password_client' => $password,
             'revoked' => false,
-        ]);
+        ];
 
-        $client->save();
+
+        if (Passport::$useClientUUIds) {
+            $data['uuid'] = Uuid::uuid4()->toString();
+        }
+
+        $client = (new Client)->forceFill($data);
 
         return $client;
     }

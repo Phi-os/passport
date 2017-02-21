@@ -82,6 +82,13 @@ class Passport
     public static $runsMigrations = true;
 
     /**
+     * Indicates if clients should be identified by UUID
+     *
+     * @var bool
+     */
+    public static $useClientUUIds = false;
+
+    /**
      * Enable the implicit grant type.
      *
      * @return static
@@ -305,4 +312,17 @@ class Passport
 
         return new static;
     }
+
+    /**
+     * Instruct Passport to use UUIDs for identifying clients.
+     *
+     * @return static
+     */
+     public static function useClientUUIds()
+     {
+         static::$useClientUUIds = true;
+
+         return new static;
+     }
+
 }
