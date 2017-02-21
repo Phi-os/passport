@@ -67,10 +67,23 @@ class RouteRegistrar
      */
     public function forAccessTokens()
     {
-        $this->router->post('/token', [
-            'uses' => 'AccessTokenController@issueToken',
-            'middleware' => 'throttle'
-        ]);
+        $defaults = [
+            'token' => [
+                'uses' => 'AccessTokenController@issueToken',
+                'middleware' => 'throttle'
+            ]
+        ];
+
+        foreach (Passport::$customRoutes as $route => $alias) {
+            if (array_key_exists($route, $defaults)) {
+                $defaults[$alias] = $defaults[$route];
+                unset($defaults[$route]);
+            }
+        }
+
+        foreach ($defaults as $route => $definition) {
+            $this->router->post('/' . $route, $definition);
+        }
 
         $this->router->group(['middleware' => ['web', 'auth']], function ($router) {
             $router->get('/tokens', [

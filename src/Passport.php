@@ -89,6 +89,14 @@ class Passport
     public static $useClientUUIds = false;
 
     /**
+     * Define custom routes, see RouteRegistrar
+     * Currently only supports '/token'
+     *
+     * @var array
+     */
+    public static $customRoutes = [];
+
+    /**
      * Enable the implicit grant type.
      *
      * @return static
@@ -324,5 +332,19 @@ class Passport
 
          return new static;
      }
+
+    /**
+     * Instruct Passport to use custom routes
+     * Currently only supports '/token'
+     *
+     * @param array $map
+     * @return static
+     */
+    public static function useCustomRoutes(array $map)
+    {
+        static::$customRoutes = $map;
+
+        return new static;
+    }
 
 }
