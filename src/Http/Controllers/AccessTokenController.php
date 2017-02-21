@@ -2,6 +2,7 @@
 
 namespace Laravel\Passport\Http\Controllers;
 
+use Laravel\Passport\Client;
 use Laravel\Passport\Passport;
 use Laravel\Passport\TokenRepository;
 use Lcobucci\JWT\Parser as JwtParser;
@@ -69,11 +70,11 @@ class AccessTokenController
             array_set($formData, 'client_id', $client->id);
 
             $request = $request->withParsedBody($formData);
-
         }
 
         return $this->withErrorHandling(function () use ($request) {
             return $this->server->respondToAccessTokenRequest($request, new Psr7Response);
         });
     }
+
 }
