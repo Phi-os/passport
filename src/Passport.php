@@ -2,6 +2,7 @@
 
 namespace Laravel\Passport;
 
+use Mockery;
 use DateInterval;
 use Carbon\Carbon;
 use DateTimeInterface;
@@ -12,7 +13,7 @@ class Passport
     /**
      * Indicates if the implicit grant type is enabled.
      *
-     * @var boolean|null
+     * @var bool|null
      */
     public static $implicitGrantEnabled = false;
 
@@ -109,10 +110,11 @@ class Passport
     }
 
     /**
-     * Get a Passport route registrar.
+     * Binds the Passport routes into the controller.
      *
+     * @param  callable|null  $callback
      * @param  array  $options
-     * @return RouteRegistrar
+     * @return void
      */
     public static function routes($callback = null, array $options = [])
     {
@@ -240,9 +242,9 @@ class Passport
             return static::$tokensExpireAt
                             ? Carbon::now()->diff(static::$tokensExpireAt)
                             : new DateInterval('P1Y');
-        } else {
-            static::$tokensExpireAt = $date;
         }
+
+        static::$tokensExpireAt = $date;
 
         return new static;
     }
@@ -259,9 +261,9 @@ class Passport
             return static::$refreshTokensExpireAt
                             ? Carbon::now()->diff(static::$refreshTokensExpireAt)
                             : new DateInterval('P1Y');
-        } else {
-            static::$refreshTokensExpireAt = $date;
         }
+
+        static::$refreshTokensExpireAt = $date;
 
         return new static;
     }
@@ -276,11 +278,34 @@ class Passport
     {
         if (is_null($cookie)) {
             return static::$cookie;
-        } else {
-            static::$cookie = $cookie;
         }
 
+        static::$cookie = $cookie;
+
         return new static;
+    }
+
+    /**
+     * Set the current user for the application with the given scopes.
+     *
+     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
+     * @param  array  $scopes
+     * @param  string  $guard
+     * @return void
+     */
+    public static function actingAs($user, $scopes = [], $guard = 'api')
+    {
+        $token = Mockery::mock(Token::class)->shouldIgnoreMissing(false);
+
+        foreach ($scopes as $scope) {
+            $token->shouldReceive('can')->with($scope)->andReturn(true);
+        }
+
+        $user->withAccessToken($token);
+
+        app('auth')->guard($guard)->setUser($user);
+
+        app('auth')->shouldUse($guard);
     }
 
     /**
@@ -302,10 +327,10 @@ class Passport
      */
     public static function keyPath($file)
     {
-        $file = ltrim($file, "/\\");
+        $file = ltrim($file, '/\\');
 
         return static::$keyPath
-            ? rtrim(static::$keyPath, "/\\").DIRECTORY_SEPARATOR.$file
+            ? rtrim(static::$keyPath, '/\\').DIRECTORY_SEPARATOR.$file
             : storage_path($file);
     }
 
