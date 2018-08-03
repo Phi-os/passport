@@ -4,40 +4,18 @@ namespace Laravel\Passport\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Laravel\Passport\TokenRepository;
 
 class AuthorizedAccessTokenController
 {
     /**
-     * The token repository implementation.
-     *
-     * @var \Laravel\Passport\TokenRepository
-     */
-    protected $tokenRepository;
-
-    /**
-     * Create a new controller instance.
-     *
-     * @param  \Laravel\Passport\TokenRepository  $tokenRepository
-     * @return void
-     */
-    public function __construct(TokenRepository $tokenRepository)
-    {
-        $this->tokenRepository = $tokenRepository;
-    }
-
-    /**
      * Get all of the authorized tokens for the authenticated user.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return Response
      */
     public function forUser(Request $request)
     {
-        $tokens = $this->tokenRepository->forUser($request->user()->getKey());
-
-        return $tokens->load('client')->filter(function ($token) {
+        return $request->user()->tokens->load('client')->filter(function ($token) {
             return ! $token->client->firstParty() && ! $token->revoked;
         })->values();
     }
@@ -45,17 +23,13 @@ class AuthorizedAccessTokenController
     /**
      * Delete the given token.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @param  string  $tokenId
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroy(Request $request, $tokenId)
     {
-        $token = $this->tokenRepository->findForUser(
-            $tokenId, $request->user()->getKey()
-        );
-
-        if (is_null($token)) {
+        if (is_null($token = $request->user()->tokens->find($tokenId))) {
             return new Response('', 404);
         }
 

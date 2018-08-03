@@ -4,7 +4,9 @@ namespace Laravel\Passport\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Laravel\Passport\Client;
 use Laravel\Passport\ClientRepository;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Laravel\Passport\Passport;
 
@@ -13,14 +15,14 @@ class ClientController
     /**
      * The client repository instance.
      *
-     * @var \Laravel\Passport\ClientRepository
+     * @var ClientRepository
      */
     protected $clients;
 
     /**
      * The validation factory implementation.
      *
-     * @var \Illuminate\Contracts\Validation\Factory
+     * @var ValidationFactory
      */
     protected $validation;
 
@@ -32,8 +34,8 @@ class ClientController
     /**
      * Create a client controller instance.
      *
-     * @param  \Laravel\Passport\ClientRepository  $clients
-     * @param  \Illuminate\Contracts\Validation\Factory  $validation
+     * @param  ClientRepository  $clients
+     * @param  ValidationFactory  $validation
      * @return void
      */
     public function __construct(
@@ -51,8 +53,8 @@ class ClientController
     /**
      * Get all of the clients for the authenticated user.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return Response
      */
     public function forUser(Request $request)
     {
@@ -64,8 +66,8 @@ class ClientController
     /**
      * Store a new client.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return Response
      */
     public function store(Request $request)
     {
@@ -82,15 +84,13 @@ class ClientController
     /**
      * Update the given client.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @param  string  $clientId
-     * @return \Illuminate\Http\Response|\Laravel\Passport\Client
+     * @return Response
      */
     public function update(Request $request, $clientId)
     {
-        $client = $this->clients->findForUser($clientId, $request->user()->getKey());
-
-        if (! $client) {
+        if (! $request->user()->clients->find($clientId)) {
             return new Response('', 404);
         }
 

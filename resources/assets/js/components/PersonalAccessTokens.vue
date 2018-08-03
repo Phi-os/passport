@@ -209,7 +209,7 @@
              * Get all of the personal access tokens for the user.
              */
             getTokens() {
-                axios.get('/oauth/personal-access-tokens')
+                this.$http.get('/oauth/personal-access-tokens')
                         .then(response => {
                             this.tokens = response.data;
                         });
@@ -219,7 +219,7 @@
              * Get all of the available scopes.
              */
             getScopes() {
-                axios.get('/oauth/scopes')
+                this.$http.get('/oauth/scopes')
                         .then(response => {
                             this.scopes = response.data;
                         });
@@ -240,7 +240,7 @@
 
                 this.form.errors = [];
 
-                axios.post('/oauth/personal-access-tokens', this.form)
+                this.$http.post('/oauth/personal-access-tokens', this.form)
                         .then(response => {
                             this.form.name = '';
                             this.form.scopes = [];
@@ -250,9 +250,9 @@
 
                             this.showAccessToken(response.data.accessToken);
                         })
-                        .catch(error => {
-                            if (typeof error.response.data === 'object') {
-                                this.form.errors = _.flatten(_.toArray(error.response.data));
+                        .catch(response => {
+                            if (typeof response.data === 'object') {
+                                this.form.errors = _.flatten(_.toArray(response.data));
                             } else {
                                 this.form.errors = ['Something went wrong. Please try again.'];
                             }
@@ -292,7 +292,7 @@
              * Revoke the given token.
              */
             revoke(token) {
-                axios.delete('/oauth/personal-access-tokens/' + token.id)
+                this.$http.delete('/oauth/personal-access-tokens/' + token.id)
                         .then(response => {
                             this.getTokens();
                         });

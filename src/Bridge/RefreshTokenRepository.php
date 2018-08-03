@@ -11,13 +11,6 @@ use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
 class RefreshTokenRepository implements RefreshTokenRepositoryInterface
 {
     /**
-     * The access token repository instance.
-     *
-     * @var \Laravel\Passport\Bridge\AccessTokenRepository
-     */
-    protected $tokens;
-
-    /**
      * The database connection.
      *
      * @var \Illuminate\Database\Connection
@@ -27,24 +20,19 @@ class RefreshTokenRepository implements RefreshTokenRepositoryInterface
     /**
      * The event dispatcher instance.
      *
-     * @var \Illuminate\Contracts\Events\Dispatcher
+     * @var \Illuminate\Events\Dispatcher
      */
-    protected $events;
+    private $events;
 
     /**
      * Create a new repository instance.
      *
-     * @param  \Laravel\Passport\Bridge\AccessTokenRepository  $tokens
      * @param  \Illuminate\Database\Connection  $database
-     * @param  \Illuminate\Contracts\Events\Dispatcher  $events
      * @return void
      */
-    public function __construct(AccessTokenRepository $tokens,
-                                Connection $database,
-                                Dispatcher $events)
+    public function __construct(Connection $database, Dispatcher $events)
     {
         $this->events = $events;
-        $this->tokens = $tokens;
         $this->database = $database;
     }
 

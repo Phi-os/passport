@@ -9,9 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Request;
-use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Guards\TokenGuard;
-use League\OAuth2\Server\CryptKey;
+use Illuminate\Support\ServiceProvider;
 use League\OAuth2\Server\ResourceServer;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Grant\AuthCodeGrant;
@@ -131,7 +130,7 @@ class PassportServiceProvider extends ServiceProvider
     /**
      * Create and configure an instance of the Auth Code grant.
      *
-     * @return \League\OAuth2\Server\Grant\AuthCodeGrant
+     * @return AuthCodeGrant
      */
     protected function makeAuthCodeGrant()
     {
@@ -143,7 +142,7 @@ class PassportServiceProvider extends ServiceProvider
     /**
      * Build the Auth Code grant instance.
      *
-     * @return \League\OAuth2\Server\Grant\AuthCodeGrant
+     * @return AuthCodeGrant
      */
     protected function buildAuthCodeGrant()
     {
@@ -157,7 +156,7 @@ class PassportServiceProvider extends ServiceProvider
     /**
      * Create and configure a Refresh Token grant instance.
      *
-     * @return \League\OAuth2\Server\Grant\RefreshTokenGrant
+     * @return RefreshTokenGrant
      */
     protected function makeRefreshTokenGrant()
     {
@@ -171,7 +170,7 @@ class PassportServiceProvider extends ServiceProvider
     /**
      * Create and configure a Password grant instance.
      *
-     * @return \League\OAuth2\Server\Grant\PasswordGrant
+     * @return PasswordGrant
      */
     protected function makePasswordGrant()
     {
@@ -188,7 +187,7 @@ class PassportServiceProvider extends ServiceProvider
     /**
      * Create and configure an instance of the Implicit grant.
      *
-     * @return \League\OAuth2\Server\Grant\ImplicitGrant
+     * @return ImplicitGrant
      */
     protected function makeImplicitGrant()
     {
@@ -198,7 +197,7 @@ class PassportServiceProvider extends ServiceProvider
     /**
      * Make the authorization service instance.
      *
-     * @return \League\OAuth2\Server\AuthorizationServer
+     * @return AuthorizationServer
      */
     public function makeAuthorizationServer()
     {
@@ -206,8 +205,8 @@ class PassportServiceProvider extends ServiceProvider
             $this->app->make(Bridge\ClientRepository::class),
             $this->app->make(Bridge\AccessTokenRepository::class),
             $this->app->make(Bridge\ScopeRepository::class),
-            $this->makeCryptKey('oauth-private.key'),
-            app('encrypter')->getKey()
+            'file://'.Passport::keyPath('oauth-private.key'),
+            'file://'.Passport::keyPath('oauth-public.key')
         );
     }
 
@@ -221,24 +220,9 @@ class PassportServiceProvider extends ServiceProvider
         $this->app->singleton(ResourceServer::class, function () {
             return new ResourceServer(
                 $this->app->make(Bridge\AccessTokenRepository::class),
-                $this->makeCryptKey('oauth-public.key')
+                'file://'.Passport::keyPath('oauth-public.key')
             );
         });
-    }
-
-    /**
-     * Create a CryptKey instance without permissions check
-     *
-     * @param string $key
-     * @return \League\OAuth2\Server\CryptKey
-     */
-    protected function makeCryptKey($key)
-    {
-        return new CryptKey(
-            'file://'.Passport::keyPath($key),
-            null,
-            false
-        );
     }
 
     /**
@@ -259,7 +243,7 @@ class PassportServiceProvider extends ServiceProvider
      * Make an instance of the token guard.
      *
      * @param  array  $config
-     * @return \Illuminate\Auth\RequestGuard
+     * @return RequestGuard
      */
     protected function makeGuard(array $config)
     {
@@ -267,7 +251,7 @@ class PassportServiceProvider extends ServiceProvider
             return (new TokenGuard(
                 $this->app->make(ResourceServer::class),
                 Auth::createUserProvider($config['provider']),
-                $this->app->make(TokenRepository::class),
+                new TokenRepository,
                 $this->app->make(ClientRepository::class),
                 $this->app->make('encrypter')
             ))->user($request);
