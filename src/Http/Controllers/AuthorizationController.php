@@ -108,9 +108,9 @@ class AuthorizationController
     /**
      * Approve the authorization request.
      *
-     * @param  AuthorizationRequest  $authRequest
-     * @param  Model  $user
-     * @return \Psr\Http\Message\ResponseInterface
+     * @param  \League\OAuth2\Server\RequestTypes\AuthorizationRequest  $authRequest
+     * @param  \Illuminate\Database\Eloquent\Model  $user
+     * @return \Illuminate\Http\Response
      */
     private function approveRequest($authRequest, $user)
     {
@@ -118,8 +118,8 @@ class AuthorizationController
 
         $authRequest->setAuthorizationApproved(true);
 
-        return $this->server->completeAuthorizationRequest(
-            $authRequest, new Psr7Response
+        return $this->convertResponse(
+            $this->server->completeAuthorizationRequest($authRequest, new Psr7Response)
         );
     }
 }

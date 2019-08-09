@@ -15,7 +15,7 @@ class CheckClientCredentials
      *
      * @var ResourceServer
      */
-    private $server;
+    protected $server;
 
     /**
      * Create a new middleware instance.

@@ -96,6 +96,13 @@ class Passport
      */
     public static $customRoutes = [];
 
+    /*
+     * Indicates if Passport should unserializes cookies.
+     * 
+     * @var bool
+     */
+    public static $unserializesCookies = true;
+
     /**
      * Enable the implicit grant type.
      *
@@ -321,6 +328,18 @@ class Passport
         return new static;
     }
 
+    /*
+     * Instruct Passport to disable cookie serialization.
+     *
+     * @return static
+     */
+    public static function withoutCookieSerialization()
+    {
+        static::$unserializesCookies = false;
+
+        return new static;
+    }
+
     /**
      * Instruct Passport to use UUIDs for identifying clients.
      *
@@ -346,5 +365,4 @@ class Passport
 
         return new static;
     }
-
 }
