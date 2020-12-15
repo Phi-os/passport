@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Request;
 use Laravel\Passport\Guards\TokenGuard;
+use League\OAuth2\Server\CryptKey;
 use Illuminate\Support\ServiceProvider;
 use League\OAuth2\Server\ResourceServer;
 use Illuminate\Config\Repository as Config;
