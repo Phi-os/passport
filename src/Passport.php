@@ -2,6 +2,7 @@
 
 namespace Laravel\Passport;
 
+use Mockery;
 use DateInterval;
 use Carbon\Carbon;
 use DateTimeInterface;
@@ -35,7 +36,7 @@ class Passport
      *
      * @var int
      */
-    public static $personalAccessClient;
+    public static $personalAccessClientId;
 
     /**
      * All of the scopes defined for the application.
@@ -68,11 +69,46 @@ class Passport
     public static $cookie = 'laravel_token';
 
     /**
+     * Indicates if Passport should ignore incoming CSRF tokens.
+     *
+     * @var bool
+     */
+    public static $ignoreCsrfToken = false;
+
+    /**
      * The storage location of the encryption keys.
      *
      * @var string
      */
     public static $keyPath;
+
+    /**
+     * The auth code model class name.
+     *
+     * @var string
+     */
+    public static $authCodeModel = 'Laravel\Passport\AuthCode';
+
+    /**
+     * The client model class name.
+     *
+     * @var string
+     */
+    public static $clientModel = 'Laravel\Passport\Client';
+
+    /**
+     * The personal access client model class name.
+     *
+     * @var string
+     */
+    public static $personalAccessClientModel = 'Laravel\Passport\PersonalAccessClient';
+
+    /**
+     * The token model class name.
+     *
+     * @var string
+     */
+    public static $tokenModel = 'Laravel\Passport\Token';
 
     /**
      * Indicates if Passport migrations will be run.
@@ -96,6 +132,9 @@ class Passport
      */
     public static $customRoutes = [];
 
+
+    public static $unserializesCookies = true;
+
     /**
      * Enable the implicit grant type.
      *
@@ -111,7 +150,7 @@ class Passport
     /**
      * Get a Passport route registrar.
      *
-     * @param  array  $options
+     * @param array $options
      * @return RouteRegistrar
      */
     public static function routes($callback = null, array $options = [])
@@ -133,9 +172,9 @@ class Passport
     /**
      * Instruct Passport to revoke other tokens when a new one is issued.
      *
+     * @return static
      * @deprecated since 1.0. Listen to Passport events on token creation instead.
      *
-     * @return static
      */
     public static function revokeOtherTokens()
     {
@@ -145,9 +184,9 @@ class Passport
     /**
      * Instruct Passport to keep revoked tokens pruned.
      *
+     * @return static
      * @deprecated since 1.0. Listen to Passport events on token creation instead.
      *
-     * @return static
      */
     public static function pruneRevokedTokens()
     {
@@ -157,12 +196,12 @@ class Passport
     /**
      * Set the client ID that should be used to issue personal access tokens.
      *
-     * @param  int  $clientId
+     * @param int $clientId
      * @return static
      */
-    public static function personalAccessClient($clientId)
+    public static function personalAccessClientId($clientId)
     {
-        static::$personalAccessClient = $clientId;
+        static::$personalAccessClientId = $clientId;
 
         return new static;
     }
@@ -180,7 +219,7 @@ class Passport
     /**
      * Determine if the given scope has been defined.
      *
-     * @param  string  $id
+     * @param string $id
      * @return bool
      */
     public static function hasScope($id)
@@ -203,7 +242,7 @@ class Passport
     /**
      * Get all of the scopes matching the given IDs.
      *
-     * @param  array  $ids
+     * @param array $ids
      * @return array
      */
     public static function scopesFor(array $ids)
@@ -220,7 +259,7 @@ class Passport
     /**
      * Define the scopes for the application.
      *
-     * @param  array  $scopes
+     * @param array $scopes
      * @return void
      */
     public static function tokensCan(array $scopes)
@@ -231,15 +270,15 @@ class Passport
     /**
      * Get or set when access tokens expire.
      *
-     * @param  \DateTimeInterface|null  $date
+     * @param \DateTimeInterface|null $date
      * @return \DateInterval|static
      */
     public static function tokensExpireIn(DateTimeInterface $date = null)
     {
         if (is_null($date)) {
             return static::$tokensExpireAt
-                            ? Carbon::now()->diff(static::$tokensExpireAt)
-                            : new DateInterval('P1Y');
+                ? Carbon::now()->diff(static::$tokensExpireAt)
+                : new DateInterval('P1Y');
         } else {
             static::$tokensExpireAt = $date;
         }
@@ -250,15 +289,15 @@ class Passport
     /**
      * Get or set when refresh tokens expire.
      *
-     * @param  \DateTimeInterface|null  $date
+     * @param \DateTimeInterface|null $date
      * @return \DateInterval|static
      */
     public static function refreshTokensExpireIn(DateTimeInterface $date = null)
     {
         if (is_null($date)) {
             return static::$refreshTokensExpireAt
-                            ? Carbon::now()->diff(static::$refreshTokensExpireAt)
-                            : new DateInterval('P1Y');
+                ? Carbon::now()->diff(static::$refreshTokensExpireAt)
+                : new DateInterval('P1Y');
         } else {
             static::$refreshTokensExpireAt = $date;
         }
@@ -269,7 +308,7 @@ class Passport
     /**
      * Get or set the name for API token cookies.
      *
-     * @param  string|null  $cookie
+     * @param string|null $cookie
      * @return string|static
      */
     public static function cookie($cookie = null)
@@ -284,9 +323,47 @@ class Passport
     }
 
     /**
+     * Indicate that Passport should ignore incoming CSRF tokens.
+     *
+     * @param boolean|null $ignoreCsrfToken
+     * @return boolean|static
+     */
+    public static function ignoreCsrfToken($ignoreCsrfToken = true)
+    {
+        static::$ignoreCsrfToken = $ignoreCsrfToken;
+
+        return new static;
+    }
+
+    /**
+     * Set the current user for the application with the given scopes.
+     *
+     * @param \Illuminate\Contracts\Auth\Authenticatable $user
+     * @param array $scopes
+     * @param string $guard
+     * @return \Illuminate\Contracts\Auth\Authenticatable
+     */
+    public static function actingAs($user, $scopes = [], $guard = 'api')
+    {
+        $token = Mockery::mock(Passport::tokenModel())->shouldIgnoreMissing(false);
+
+        foreach ($scopes as $scope) {
+            $token->shouldReceive('can')->with($scope)->andReturn(true);
+        }
+
+        $user->withAccessToken($token);
+
+        app('auth')->guard($guard)->setUser($user);
+
+        app('auth')->shouldUse($guard);
+
+        return $user;
+    }
+
+    /**
      * Set the storage location of the encryption keys.
      *
-     * @param  string  $path
+     * @param string $path
      * @return void
      */
     public static function loadKeysFrom($path)
@@ -297,7 +374,7 @@ class Passport
     /**
      * The location of the encryption keys.
      *
-     * @param  string  $file
+     * @param string $file
      * @return string
      */
     public static function keyPath($file)
@@ -305,8 +382,132 @@ class Passport
         $file = ltrim($file, "/\\");
 
         return static::$keyPath
-            ? rtrim(static::$keyPath, "/\\").DIRECTORY_SEPARATOR.$file
+            ? rtrim(static::$keyPath, "/\\") . DIRECTORY_SEPARATOR . $file
             : storage_path($file);
+    }
+
+    /**
+     * Set the auth code model class name.
+     *
+     * @param string $authCodeModel
+     * @return void
+     */
+    public static function useAuthCodeModel($authCodeModel)
+    {
+        static::$authCodeModel = $authCodeModel;
+    }
+
+    /**
+     * Get the auth code model class name.
+     *
+     * @return string
+     */
+    public static function authCodeModel()
+    {
+        return static::$authCodeModel;
+    }
+
+    /**
+     * Get a new auth code model instance.
+     *
+     * @return \Laravel\Passport\AuthCode
+     */
+    public static function authCode()
+    {
+        return new static::$authCodeModel;
+    }
+
+    /**
+     * Set the client model class name.
+     *
+     * @param string $clientModel
+     * @return void
+     */
+    public static function useClientModel($clientModel)
+    {
+        static::$clientModel = $clientModel;
+    }
+
+    /**
+     * Get the client model class name.
+     *
+     * @return string
+     */
+    public static function clientModel()
+    {
+        return static::$clientModel;
+    }
+
+    /**
+     * Get a new client model instance.
+     *
+     * @return \Laravel\Passport\Client
+     */
+    public static function client()
+    {
+        return new static::$clientModel;
+    }
+
+    /**
+     * Set the personal access client model class name.
+     *
+     * @param string $clientModel
+     * @return void
+     */
+    public static function usePersonalAccessClientModel($clientModel)
+    {
+        static::$personalAccessClientModel = $clientModel;
+    }
+
+    /**
+     * Get the personal access client model class name.
+     *
+     * @return string
+     */
+    public static function personalAccessClientModel()
+    {
+        return static::$personalAccessClientModel;
+    }
+
+    /**
+     * Get a new personal access client model instance.
+     *
+     * @return \Laravel\Passport\PersonalAccessClient
+     */
+    public static function personalAccessClient()
+    {
+        return new static::$personalAccessClientModel;
+    }
+
+    /**
+     * Set the token model class name.
+     *
+     * @param string $tokenModel
+     * @return void
+     */
+    public static function useTokenModel($tokenModel)
+    {
+        static::$tokenModel = $tokenModel;
+    }
+
+    /**
+     * Get the token model class name.
+     *
+     * @return string
+     */
+    public static function tokenModel()
+    {
+        return static::$tokenModel;
+    }
+
+    /**
+     * Get a new personal access client model instance.
+     *
+     * @return \Laravel\Passport\Token
+     */
+    public static function token()
+    {
+        return new static::$tokenModel;
     }
 
     /**
@@ -326,12 +527,12 @@ class Passport
      *
      * @return static
      */
-     public static function useClientUUIds()
-     {
-         static::$useClientUUIds = true;
+    public static function useClientUUIds()
+    {
+        static::$useClientUUIds = true;
 
-         return new static;
-     }
+        return new static;
+    }
 
     /**
      * Instruct Passport to use custom routes
@@ -347,4 +548,15 @@ class Passport
         return new static;
     }
 
+    /**
+     * Instruct Passport to disable cookie serialization.
+     *
+     * @return static
+     */
+    public static function withoutCookieSerialization()
+    {
+        static::$unserializesCookies = false;
+
+        return new static;
+    }
 }

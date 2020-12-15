@@ -26,7 +26,7 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
      *
      * @var \Illuminate\Events\Dispatcher
      */
-    private $events;
+    protected $events;
 
     /**
      * Create a new repository instance.

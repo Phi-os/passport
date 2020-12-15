@@ -101,16 +101,22 @@ class AuthorizationController
         return Passport::scopesFor(
             collect($authRequest->getScopes())->map(function ($scope) {
                 return $scope->getIdentifier();
-            })->all()
+            })->unique()->all()
         );
     }
 
     /**
      * Approve the authorization request.
      *
+<<<<<<< HEAD
      * @param  AuthorizationRequest  $authRequest
      * @param  Model  $user
      * @return \Psr\Http\Message\ResponseInterface
+=======
+     * @param  \League\OAuth2\Server\RequestTypes\AuthorizationRequest  $authRequest
+     * @param  \Illuminate\Database\Eloquent\Model  $user
+     * @return \Illuminate\Http\Response
+>>>>>>> 5a3dbeb0904573fcfecf11c018eaa42bfc935372
      */
     private function approveRequest($authRequest, $user)
     {
@@ -118,8 +124,8 @@ class AuthorizationController
 
         $authRequest->setAuthorizationApproved(true);
 
-        return $this->server->completeAuthorizationRequest(
-            $authRequest, new Psr7Response
+        return $this->convertResponse(
+            $this->server->completeAuthorizationRequest($authRequest, new Psr7Response)
         );
     }
 }

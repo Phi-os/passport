@@ -73,7 +73,9 @@ class AccessTokenController
         }
 
         return $this->withErrorHandling(function () use ($request) {
-            return $this->server->respondToAccessTokenRequest($request, new Psr7Response);
+            return $this->convertResponse(
+                $this->server->respondToAccessTokenRequest($request, new Psr7Response)
+            );
         });
     }
 

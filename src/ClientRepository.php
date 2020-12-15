@@ -14,7 +14,9 @@ class ClientRepository
      */
     public function find($id)
     {
-        return Client::find($id);
+        $client = Passport::client();
+
+        return $client->where($client->getKeyName(), $id)->first();
     }
 
     /**
@@ -42,6 +44,23 @@ class ClientRepository
     }
 
     /**
+     * Get a client instance for the given ID and user ID.
+     *
+     * @param  int  $clientId
+     * @param  mixed  $userId
+     * @return \Laravel\Passport\Client|null
+     */
+    public function findForUser($clientId, $userId)
+    {
+        $client = Passport::client();
+
+        return $client
+                    ->where($client->getKeyName(), $clientId)
+                    ->where('user_id', $userId)
+                    ->first();
+    }
+
+    /**
      * Get the client instances for the given user ID.
      *
      * @param  mixed  $userId
@@ -49,8 +68,9 @@ class ClientRepository
      */
     public function forUser($userId)
     {
-        return Client::where('user_id', $userId)
-                        ->orderBy('name', 'desc')->get();
+        return Passport::client()
+                    ->where('user_id', $userId)
+                    ->orderBy('name', 'asc')->get();
     }
 
     /**
@@ -78,6 +98,10 @@ class ClientRepository
         } else {
             return PersonalAccessClient::orderBy('id', 'desc')->first()->client;
         }
+
+        $client = Passport::personalAccessClient();
+
+        return $client->orderBy($client->getKeyName(), 'desc')->first()->client;
     }
 
     /**
@@ -92,7 +116,6 @@ class ClientRepository
      */
     public function create($userId, $name, $redirect, $personalAccess = false, $password = false)
     {
-        //$client = (new Client)->forceFill([
         $data = [
             'user_id' => $userId,
             'name' => $name,
@@ -108,7 +131,9 @@ class ClientRepository
             $data['uuid'] = Uuid::uuid4()->toString();
         }
 
-        $client = (new Client)->forceFill($data);
+        $client = Passport::client()->forceFill($data);
+
+        $client->save();
 
         return $client;
     }
@@ -123,7 +148,11 @@ class ClientRepository
      */
     public function createPersonalAccessClient($userId, $name, $redirect)
     {
-        return $this->create($userId, $name, $redirect, true);
+        return tap($this->create($userId, $name, $redirect, true), function ($client) {
+            $accessClient = Passport::personalAccessClient();
+            $accessClient->client_id = $client->id;
+            $accessClient->save();
+        });
     }
 
     /**

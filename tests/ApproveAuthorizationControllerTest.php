@@ -1,8 +1,9 @@
 <?php
 
+use PHPUnit\Framework\TestCase;
 use League\OAuth2\Server\AuthorizationServer;
 
-class ApproveAuthorizationControllerTest extends PHPUnit_Framework_TestCase
+class ApproveAuthorizationControllerTest extends TestCase
 {
     public function tearDown()
     {
@@ -24,9 +25,12 @@ class ApproveAuthorizationControllerTest extends PHPUnit_Framework_TestCase
         $authRequest->shouldReceive('setUser')->once();
         $authRequest->shouldReceive('setAuthorizationApproved')->once()->with(true);
 
-        $server->shouldReceive('completeAuthorizationRequest')->with($authRequest, Mockery::type('Psr\Http\Message\ResponseInterface'))->andReturn('response');
+        $psrResponse = new Zend\Diactoros\Response();
+        $psrResponse->getBody()->write('response');
 
-        $this->assertEquals('response', $controller->approve($request));
+        $server->shouldReceive('completeAuthorizationRequest')->with($authRequest, Mockery::type('Psr\Http\Message\ResponseInterface'))->andReturn($psrResponse);
+
+        $this->assertEquals('response', $controller->approve($request)->getContent());
     }
 }
 
